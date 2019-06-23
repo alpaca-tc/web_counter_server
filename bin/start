@@ -1,25 +1,32 @@
 #!/usr/bin/env ruby
 
 require 'bundler/setup'
+require 'etc'
 
 $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'web_counter_server'
 
 class Fibonacci
+  def initialize
+    @cache = {}
+  end
+
   def calculate(number)
-    if number.zero?
-      0
-    elsif number == 1
-      1
-    else
-      calculate(number - 2) + calculate(number - 1)
-    end
+    @cache[number] ||= if number.zero?
+                         0
+                       elsif number == 1
+                         1
+                       else
+                         calculate(number - 2) + calculate(number - 1)
+                       end
   end
 end
 
 Thread.new do
+  usage = WebCounterServer::Usage.new(Process.pid)
+
   loop do
-    print "-- CPU Usage: #{`ps -A -o %cpu | awk '{s+=$1} END {print s "%"}'`.strip} --\r"
+    print "#{usage.build_usage.strip}\r"
     sleep(0.5)
   end
 end

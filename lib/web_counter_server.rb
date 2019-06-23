@@ -12,6 +12,7 @@ class WebCounterServer
   require 'web_counter_server/request'
   require 'web_counter_server/response'
   require 'web_counter_server/http_headers'
+  require 'web_counter_server/usage'
 
   def self.start(host: '127.0.0.1', port: '8080', &block)
     new(host: host, port: port, &block).start

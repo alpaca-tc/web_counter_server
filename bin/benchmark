@@ -2,9 +2,9 @@
 
 require 'benchmark'
 
-size = 35
+size = 1000
 
-system('curl http://127.0.0.1:8080 --header X-INIT-COUNTER:1')
+# system('curl http://127.0.0.1:8080 --header X-INIT-COUNTER:1')
 
 puts Benchmark::CAPTION
 puts Benchmark.measure {
