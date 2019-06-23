@@ -9,24 +9,24 @@ require 'web_counter_server'
 
 def use_cpu_and_io(count)
   # IOを使う
-  response = OpenURI.open_uri("https://www.google.com/search?q=#{count}").read
+  OpenURI.open_uri("https://www.google.com/search?q=#{count}").read
 
   # CPUを使い切る
   i = 0
   while i < 100_000_000; i += 1 end
-
-  response
 end
 
 counter = 0
 
 WebCounterServer.start do |request, response|
   # Counterを0にしておく
+  # X-INIT-COUNTERがヘッダーに含まれる場合は、カウンタをリセットする
   counter = 0 if request.headers['X-INIT-COUNTER']
+
   counter += 1
 
   # CPUとIOをいい感じに使う処理を書く
-  body = use_cpu_and_io(counter)
+  use_cpu_and_io(counter)
 
   response.set_status(200)
   response.headers['Content-Type'] = 'text/html'
