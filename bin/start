@@ -13,7 +13,7 @@ def use_cpu_and_io(count)
 
   # CPUを使い切る
   i = 0
-  while i < 100_000_000; i += 1 end
+  while i < 10_000_000; i += 1 end
 end
 
 counter = 0
