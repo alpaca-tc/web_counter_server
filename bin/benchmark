@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+require 'benchmark'
+
+size = 35
+
+puts Benchmark::CAPTION
+puts Benchmark.measure {
+  threads = size.times.map do
+    Thread.new do
+      system('curl http://127.0.0.1:8080')
+    end
+  end
+
+  threads.last.join
+}
