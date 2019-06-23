@@ -5,13 +5,15 @@ require 'bundler/setup'
 $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'web_counter_server'
 
-def fibonacci(number)
-  if number.zero?
-    0
-  elsif number == 1
-    1
-  else
-    fibonacci(number - 2) + fibonacci(number - 1)
+class Fibonacci
+  def calculate(number)
+    if number.zero?
+      0
+    elsif number == 1
+      1
+    else
+      calculate(number - 2) + calculate(number - 1)
+    end
   end
 end
 
@@ -23,6 +25,7 @@ Thread.new do
 end
 
 counter = 0
+fibonacci = Fibonacci.new
 
 WebCounterServer.start do |request, response|
   counter = 0 if request.headers['X-INIT-COUNTER']
@@ -32,5 +35,5 @@ WebCounterServer.start do |request, response|
 
   counter += 1
 
-  response.set_body("#{counter}: #{fibonacci(counter)}\n")
+  response.set_body("#{counter}: #{fibonacci.calculate(counter)}\n")
 end
