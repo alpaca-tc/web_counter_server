@@ -4,6 +4,8 @@ require 'benchmark'
 
 size = 35
 
+system('curl http://127.0.0.1:8080 --header X-INIT-COUNTER:1')
+
 puts Benchmark::CAPTION
 puts Benchmark.measure {
   threads = size.times.map do
@@ -12,5 +14,5 @@ puts Benchmark.measure {
     end
   end
 
-  threads.last.join
+  threads.each(&:join)
 }

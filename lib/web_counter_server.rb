@@ -32,7 +32,7 @@ class WebCounterServer
 
     logger.debug("Listening on tcp://#{@host}:#{@port}")
     server = TCPServer.new(@host, @port)
-    server.listen(5)
+    server.listen(1024)
 
     run(server)
   end
@@ -59,6 +59,8 @@ class WebCounterServer
     @application.call(request, response)
 
     socket.write(response.build_response)
+  rescue
+    logger.error 'failed'
   ensure
     socket.close
   end

@@ -15,9 +15,18 @@ def fibonacci(number)
   end
 end
 
+Thread.new do
+  loop do
+    print "-- CPU Usage: #{`ps -A -o %cpu | awk '{s+=$1} END {print s "%"}'`.strip} --\r"
+    sleep(0.5)
+  end
+end
+
 counter = 0
 
 WebCounterServer.start do |request, response|
+  counter = 0 if request.headers['X-INIT-COUNTER']
+
   response.set_status(200)
   response.headers['Content-Type'] = 'text/plain'
 
