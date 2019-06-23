@@ -29,6 +29,7 @@ class WebCounterServer
   end
 
   def start
+    render_usage
     trap('INT') { on_exit }
 
     logger.debug("Listening on tcp://#{@host}:#{@port}")
@@ -39,6 +40,17 @@ class WebCounterServer
   end
 
   private
+
+  def render_usage
+    Thread.new do
+      usage = WebCounterServer::Usage.new(Process.pid)
+
+      loop do
+        print "#{usage.build_usage.strip}\r"
+        sleep(1)
+      end
+    end
+  end
 
   def run(server)
     loop do

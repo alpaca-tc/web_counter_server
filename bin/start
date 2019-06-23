@@ -2,45 +2,33 @@
 
 require 'bundler/setup'
 require 'etc'
+require 'open-uri'
 
 $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'web_counter_server'
 
-class Fibonacci
-  def initialize
-    @cache = {}
-  end
+def use_cpu_and_io(count)
+  # IOを使う
+  response = OpenURI.open_uri("https://www.google.com/search?q=#{count}").read
 
-  def calculate(number)
-    @cache[number] ||= if number.zero?
-                         0
-                       elsif number == 1
-                         1
-                       else
-                         calculate(number - 2) + calculate(number - 1)
-                       end
-  end
-end
+  # CPUを使い切る
+  i = 0
+  while i < 100_000_000; i += 1 end
 
-Thread.new do
-  usage = WebCounterServer::Usage.new(Process.pid)
-
-  loop do
-    print "#{usage.build_usage.strip}\r"
-    sleep(0.5)
-  end
+  response
 end
 
 counter = 0
-fibonacci = Fibonacci.new
 
 WebCounterServer.start do |request, response|
+  # Counterを0にしておく
   counter = 0 if request.headers['X-INIT-COUNTER']
-
-  response.set_status(200)
-  response.headers['Content-Type'] = 'text/plain'
-
   counter += 1
 
-  response.set_body("#{counter}: #{fibonacci.calculate(counter)}\n")
+  # CPUとIOをいい感じに使う処理を書く
+  body = use_cpu_and_io(counter)
+
+  response.set_status(200)
+  response.headers['Content-Type'] = 'text/html'
+  response.set_body("#{counter}\n")
 end
