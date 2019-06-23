@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
+require 'web_counter_server'
+
+WebCounterServer.start do |request, response|
+  response.headers['Content-Type'] = 'text/plain'
+  response.set_body('1')
+end
