@@ -2,9 +2,72 @@
 
 require 'bundler/setup'
 require 'open-uri'
+require 'logger'
+require 'pry'
 
-$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
-require 'web_counter_server'
+class WebCounterServer
+  def self.logger
+    @logger ||= Logger.new($stdout)
+  end
+
+  def initialize(host:, port:, &block)
+    @host = host
+    @port = port
+    @block = block
+  end
+
+  def start
+    trap('INT') { on_exit }
+
+    # リクエストの受付開始
+    logger.info("Listening on tcp://#{@host}:#{@port}")
+    server = TCPServer.new(@host, @port)
+
+    run(server)
+  end
+
+  private
+
+  def run(server)
+    loop do
+      # リクエストが来たら
+      socket = server.accept_nonblock
+
+      # レスポンスを返す
+      serve(socket)
+    rescue IO::WaitReadable, Errno::EINTR
+      IO.select([server])
+      retry
+    end
+  end
+
+  def serve(socket)
+    # IOの準備完了を待つ
+    socket.to_io.wait_readable(0.5)
+
+    # レスポンスを返す
+    response = @block.call
+    logger.info("Response #{response}")
+    socket.write(response)
+  rescue => error
+    logger.error "#{error.message} #{error.backtrace}"
+  ensure
+    socket.close
+  end
+
+  def logger
+    self.class.logger
+  end
+
+  # https://bugs.ruby-lang.org/issues/7917
+  def on_exit
+    Thread.new {
+      puts ""
+      logger.info('Goodbye!')
+      exit
+    }.join
+  end
+end
 
 def use_cpu_and_io(count)
   # IOを使う
@@ -17,7 +80,7 @@ end
 
 counter = 0
 
-WebCounterServer.start do
+WebCounterServer.new(host: '127.0.0.1', port: '8080').start do
   # CPUとIOをいい感じに使う処理を書く
   use_cpu_and_io(counter)
 

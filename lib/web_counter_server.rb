@@ -19,7 +19,7 @@ class WebCounterServer
   def start
     trap('INT') { on_exit }
 
-    logger.debug("Listening on tcp://#{@host}:#{@port}")
+    logger.info("Listening on tcp://#{@host}:#{@port}")
     server = TCPServer.new(@host, @port)
 
     run(server)
@@ -39,8 +39,6 @@ class WebCounterServer
 
   def serve(socket)
     socket.to_io.wait_readable(0.5)
-    raise 'Invalid sequence' if socket.eof?
-
     response = @application.call
     socket.write(response)
   rescue
@@ -57,7 +55,7 @@ class WebCounterServer
   def on_exit
     Thread.new {
       puts ""
-      logger.debug('Goodbye!')
+      logger.info('Goodbye!')
       exit
     }.join
   end
