@@ -10,12 +10,12 @@ class WebCounterServer
     @logger ||= Logger.new($stdout)
   end
 
-  def initialize(host:, port:, threads: 1, &block)
+  def initialize(host:, port:, &block)
     @host = host
     @port = port
   end
 
-  def start(&block)
+  def start(workers: 1, threads: 1, &block)
     trap('INT') { on_exit }
 
     # リクエストの受付開始
@@ -23,11 +23,17 @@ class WebCounterServer
     server = TCPServer.new(@host, @port)
 
     # レスポンスを返す
-    threads = 10.times.map do
-      Thread.new { run(server, &block) }
+    pids = Array.new(workers) do
+      fork do
+        local_threads = threads.times.map do
+          Thread.new { run(server, &block) }
+        end
+
+        local_threads.last.join
+      end
     end
 
-    threads.last.join
+    Process.waitall
   end
 
   private
@@ -83,21 +89,18 @@ def use_cpu_and_io
   end
 end
 
-count = 0
 mutex = Mutex.new
+reader, writer = IO.pipe
+writer.write("0\n")
 
-WebCounterServer.new(host: '127.0.0.1', port: '8080').start do
-  local_count = nil
-
-  mutex.synchronize do
-    count += 1
-    local_count = count
-  end
+WebCounterServer.new(host: '127.0.0.1', port: '8080').start(workers: 8, threads: 8) do
+  count = reader.gets("\n").strip.to_i
+  writer.write("#{count + 1}\n")
 
   # CPUとIOをいい感じに使う処理を書く
   use_cpu_and_io
 
-  body = local_count.to_s
+  body = count.to_s
 
   <<~RESPONSE
   HTTP/1.1 200 OK

@@ -12,7 +12,7 @@ result = Benchmark.measure {
     Thread.new do
       puts "Request sent #{i}"
       response = OpenURI.open_uri('http://127.0.0.1:8080').read.strip
-      puts response
+      puts "Receive resopnse: #{response}"
       m.synchronize { all_responses << response }
     end
   end
