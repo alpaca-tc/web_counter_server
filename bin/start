@@ -10,7 +10,7 @@ class WebCounterServer
     @logger ||= Logger.new($stdout)
   end
 
-  def initialize(host:, port:, &block)
+  def initialize(host:, port:, threads: 1, &block)
     @host = host
     @port = port
   end
@@ -22,7 +22,12 @@ class WebCounterServer
     logger.info("Listening on tcp://#{@host}:#{@port}")
     server = TCPServer.new(@host, @port)
 
-    run(server, &block)
+    # レスポンスを返す
+    threads = 100.times.map do
+      Thread.new { run(server, &block) }
+    end
+
+    threads.last.join
   end
 
   private
@@ -32,7 +37,6 @@ class WebCounterServer
       # リクエストが来たら
       socket = server.accept_nonblock
 
-      # レスポンスを返す
       serve(socket, &block)
     rescue IO::WaitReadable, Errno::EINTR
       IO.select([server])
@@ -42,12 +46,12 @@ class WebCounterServer
 
   def serve(socket, &block)
     # IOの準備完了を待つ
-    socket.to_io.wait_readable(0.5)
+    # socket.to_io.wait_readable(0.5)
 
     # レスポンスを返す
     response = block.call
-    logger.info("Response #{response}")
     socket.write(response)
+    logger.info('Finished')
   rescue => error
     logger.error "#{error.message} #{error.backtrace}"
   ensure

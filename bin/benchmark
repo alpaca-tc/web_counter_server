@@ -8,8 +8,9 @@ m = Mutex.new
 all_responses = []
 
 result = Benchmark.measure {
-  threads = size.times.map do
+  threads = size.times.map do |i|
     Thread.new do
+      puts "Request sent #{i}"
       response = OpenURI.open_uri('http://127.0.0.1:8080').read.strip
       puts response
       m.synchronize { all_responses << response }
