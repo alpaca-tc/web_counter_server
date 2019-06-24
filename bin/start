@@ -84,14 +84,20 @@ def use_cpu_and_io
 end
 
 count = 0
+mutex = Mutex.new
 
 WebCounterServer.new(host: '127.0.0.1', port: '8080').start do
-  count += 1
+  local_count = nil
+
+  mutex.synchronize do
+    count += 1
+    local_count = count
+  end
 
   # CPUとIOをいい感じに使う処理を書く
   use_cpu_and_io
 
-  body = count.to_s
+  body = local_count.to_s
 
   <<~RESPONSE
   HTTP/1.1 200 OK
