@@ -23,7 +23,7 @@ class WebCounterServer
     server = TCPServer.new(@host, @port)
 
     # レスポンスを返す
-    threads = 100.times.map do
+    threads = 10.times.map do
       Thread.new { run(server, &block) }
     end
 
@@ -72,23 +72,26 @@ class WebCounterServer
   end
 end
 
-def use_cpu_and_io(count)
+def use_cpu_and_io
   # IOを使う
-  OpenURI.open_uri("https://www.google.com/search?q=#{count}").read
+  OpenURI.open_uri("https://biz.moneyforward.com/payroll").read
 
   # CPUを使い切る
   i = 0
-  while i < 10_000_000; i += 1 end
+  while i < 10_000_000
+    i += 1
+  end
 end
 
-counter = 0
+count = 0
 
 WebCounterServer.new(host: '127.0.0.1', port: '8080').start do
-  # CPUとIOをいい感じに使う処理を書く
-  use_cpu_and_io(counter)
+  count += 1
 
-  counter += 1
-  body = counter.to_s
+  # CPUとIOをいい感じに使う処理を書く
+  use_cpu_and_io
+
+  body = count.to_s
 
   <<~RESPONSE
   HTTP/1.1 200 OK
