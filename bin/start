@@ -10,7 +10,7 @@ class WebCounterServer
     @logger ||= Logger.new($stdout)
   end
 
-  def initialize(host:, port:, &block)
+  def initialize(host:, port:)
     @host = host
     @port = port
   end
@@ -38,10 +38,12 @@ class WebCounterServer
 
   private
 
+  # リクエストが来たらレスポンスを返す
   def run(server, &block)
     loop do
       # リクエストが来たら
-      socket = server.accept_nonblock
+      socket = server.accept
+      logger.debug("Receive request")
 
       serve(socket, &block)
     rescue IO::WaitReadable, Errno::EINTR
@@ -50,14 +52,11 @@ class WebCounterServer
     end
   end
 
+  # レスポンスを返す
   def serve(socket, &block)
-    # IOの準備完了を待つ
-    # socket.to_io.wait_readable(0.5)
-
-    # レスポンスを返す
     response = block.call
     socket.write(response)
-    logger.info('Finished')
+    logger.debug('Response sent')
   rescue => error
     logger.error "#{error.message} #{error.backtrace}"
   ensure
@@ -68,6 +67,7 @@ class WebCounterServer
     self.class.logger
   end
 
+  # Ctrl-Cを押した時の処理
   # https://bugs.ruby-lang.org/issues/7917
   def on_exit
     Thread.new {
@@ -93,6 +93,7 @@ mutex = Mutex.new
 reader, writer = IO.pipe
 writer.write("0\n")
 
+# リクエストが来たらブロックの中身が実行される
 WebCounterServer.new(host: '127.0.0.1', port: '8080').start(workers: 8, threads: 8) do
   count = reader.gets("\n").strip.to_i
   writer.write("#{count + 1}\n")
