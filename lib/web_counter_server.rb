@@ -2,16 +2,6 @@ require 'pry'
 require 'logger'
 
 class WebCounterServer
-  # String for linefeed
-  MAX_URI_LENGTH = 2083 # URLの最長
-  LF = "\012"
-  CRLF = "\r\n"
-  TERMINAL_RE = /(?:#{CRLF}|#{LF})/
-  BLOCK_SIZE = 4096
-
-  require 'web_counter_server/request'
-  require 'web_counter_server/response'
-  require 'web_counter_server/http_headers'
   require 'web_counter_server/usage'
 
   def self.start(host: '127.0.0.1', port: '8080', &block)
@@ -34,7 +24,6 @@ class WebCounterServer
 
     logger.debug("Listening on tcp://#{@host}:#{@port}")
     server = TCPServer.new(@host, @port)
-    server.listen(1024)
 
     run(server)
   end
@@ -66,12 +55,8 @@ class WebCounterServer
     socket.to_io.wait_readable(0.5)
     raise 'Invalid sequence' if socket.eof?
 
-    request = WebCounterServer::Request.parse(socket)
-    response = WebCounterServer::Response.new(request)
-
-    @application.call(request, response)
-
-    socket.write(response.build_response)
+    response = @application.call
+    socket.write(response)
   rescue
     logger.error 'failed'
   ensure

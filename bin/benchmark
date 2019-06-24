@@ -3,8 +3,6 @@
 require 'benchmark'
 require 'open-uri'
 
-system('curl http://127.0.0.1:8080 --header X-INIT-COUNTER:1')
-
 size = 30
 m = Mutex.new
 all_responses = []
@@ -21,7 +19,7 @@ result = Benchmark.measure {
   threads.each(&:join)
 }
 
-# 1~100の値が帰ってくるはず
+# インクリメントされたユニークな数値が返ってくるはず
 puts <<~EOS
 #{Benchmark::CAPTION}
 #{result}
