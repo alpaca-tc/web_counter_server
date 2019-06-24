@@ -13,40 +13,39 @@ class WebCounterServer
   def initialize(host:, port:, &block)
     @host = host
     @port = port
-    @block = block
   end
 
-  def start
+  def start(&block)
     trap('INT') { on_exit }
 
     # リクエストの受付開始
     logger.info("Listening on tcp://#{@host}:#{@port}")
     server = TCPServer.new(@host, @port)
 
-    run(server)
+    run(server, &block)
   end
 
   private
 
-  def run(server)
+  def run(server, &block)
     loop do
       # リクエストが来たら
       socket = server.accept_nonblock
 
       # レスポンスを返す
-      serve(socket)
+      serve(socket, &block)
     rescue IO::WaitReadable, Errno::EINTR
       IO.select([server])
       retry
     end
   end
 
-  def serve(socket)
+  def serve(socket, &block)
     # IOの準備完了を待つ
     socket.to_io.wait_readable(0.5)
 
     # レスポンスを返す
-    response = @block.call
+    response = block.call
     logger.info("Response #{response}")
     socket.write(response)
   rescue => error
