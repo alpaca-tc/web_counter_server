@@ -2,8 +2,6 @@ require 'pry'
 require 'logger'
 
 class WebCounterServer
-  require 'web_counter_server/usage'
-
   def self.start(host: '127.0.0.1', port: '8080', &block)
     new(host: host, port: port, &block).start
   end
@@ -19,7 +17,6 @@ class WebCounterServer
   end
 
   def start
-    render_usage
     trap('INT') { on_exit }
 
     logger.debug("Listening on tcp://#{@host}:#{@port}")
@@ -29,17 +26,6 @@ class WebCounterServer
   end
 
   private
-
-  def render_usage
-    Thread.new do
-      usage = WebCounterServer::Usage.new(Process.pid)
-
-      loop do
-        print "#{usage.build_usage.strip}\r"
-        sleep(1)
-      end
-    end
-  end
 
   def run(server)
     loop do
